@@ -1,75 +1,70 @@
-AngryBirdGame
-Afunandinteractive 2Dgameinspiredbytheclassic Angry Birds, created using Java
-andtheLibGDXgamedevelopmentframework.
-Features
-● Physics-BasedGameplay:Realistic interactions powered by Box2D.
-● RichGraphics:Includescolourful birds, pigs, blocks, and background art.
-● Interactive Screens:
-○ HomeScreen
-○ LevelSelectionScreen
-○ GameplayScreen
-○ WinandLoseScreens
-HowtoRuntheGame
-RuntheGame:Usethefollowingcommandtobuildandlaunchthegame.
+🎮 AngryBirdGame
+📌 Overview
+AngryBirdGame is a fun and interactive 2D game inspired by the classic Angry Birds, developed using Java and the LibGDX game development framework.
+The game features physics-based mechanics, colorful graphics, and multiple interactive screens.
+________________________________________
+✨ Features
+•	Physics-Based Gameplay – Realistic interactions powered by Box2D
+•	Rich Graphics – Includes colorful birds, pigs, blocks, and background art
+•	Interactive Screens
+o	Home Screen
+o	Level Selection Screen
+o	Gameplay Screen
+o	Win & Lose Screens
+________________________________________
+⚙️ How to Run the Game
+Run Command
+Use the following command to build and launch the game:
 ./gradlew lwjgl3:run
-File Structure and Explanation
+________________________________________
+📂 File Structure & Explanation
 1. Core Module
-Thecoremodulehandlesallthegameplaylogicanddefinesthemaincomponentsof
-the game:
-● Bird.java: Represents the birds that players launch. Includes functionality for
-movement,animations,andinteractions with the gameenvironment.
-● Pig.java:Definesthepig'sbehaviorandproperties. Pigs serve as the game's
-targets and react to collisions.
-● Block.java:Represents structural blocks in the game. Blocks can be destroyed
-or knockedoverbythebirds.
-● MyGame.java:Themainentrypointforthegamelogic.Setsupthegame
-environment andinitialises various game screens.
-● GameScreen.java:Managesthegameplayscene,renderingbirds,blocks,and
-pigs. Handles user input for launching birds.
-● HomeScreen.java:Displaysthetitle screen with options to start the game or
-select levels.
-● WinScreen.javaandLoseScreen.java: Screens displayed after a level ends,
-indicating whether the player won or lost.
-● PhysicsHandler.java: Managesphysicsinteractions using Box2D, simulating
-realistic gravity, collisions, and object movements.
-2. LWJGL3Module
-TheLWJGL3modulehandlesdesktop-specificconfigurations,includingwindow
-creation and platform-specific settings.
-● Lwjgl3Launcher.java: Themainclassresponsible for launching the gameon
-desktop platforms. Configures screen resolution, window title, and fullscreen
-mode.
-● Lwjgl3ApplicationConfiguration.java: Sets additional configurations, such as
-framerate, VSync, and resource directories.
+The core module handles all gameplay logic and defines the main components of the game:
+File	Description
+Bird.java	Represents birds launched by the player
+Pig.java	Defines pig behavior and reactions to collisions
+Block.java	Represents destructible blocks
+MyGame.java	Main entry point and screen initialization
+GameScreen.java	Handles main gameplay and user input
+HomeScreen.java	Displays the home screen
+WinScreen.java	Screen shown when player wins
+LoseScreen.java	Screen shown when player loses
+PhysicsHandler.java	Handles Box2D physics interactions
+________________________________________
+2. LWJGL3 Module
+Handles desktop-specific configurations:
+File	Description
+Lwjgl3Launcher.java	Launches the game and sets window properties
+Lwjgl3ApplicationConfiguration.java	Sets FPS, VSync, fullscreen, and resources
+________________________________________
 3. Assets Directory
-Contains all the visual and audio resources for the game:
-● images:Includesspritesfor birds, pigs, blocks, background elements, and the
-slingshot.
-● fonts:Containsanycustomfontsusedinthegameinterface.
-● sounds:Optionaldirectoryfor soundeffectslike bird launches, block collisions,
-andpigdefeat sounds.
-● levels:Files defining thelayout of levels.
-ExampleGameplay
-1. Starting the Game:
-○ ThegamebeginsontheHomeScreen.
-○ TheplayertouchesanywhereonthescreentoproceedtotheMenu
-Screen.
-2. NavigatingtheMenu:
-○ TheMenuScreenoffersoptionslike"Play"tostartthegame.
-○ Selecting"Play"leadstotheLevelSelection Screen.
-3. ChoosingaLevel:
-○ TheLevelScreendisplaysavailablelevels.
-○ Afterselecting alevel, the player is taken to the Main GameScreen.
-4. Gameplay:
-○ Playersaimandlaunchbirdstoknockdownpigsandstructures.
-○ Thegoalistodefeatallpigstowinthelevel.
-5. EndofLevel:
-○ Iftheplayersuccessfully defeats all pigs, the Win Screen appears.
-○ Iftheplayerfails, the Lose Screenappears.
-Resources
-● AngryBird'sOfficialWebsiteuseBirdsCreator
-● AngryBirdFandomGallery
-Sonu Paswan
-2023530
+Contains all visual and audio resources:
+•	images – Birds, pigs, blocks, backgrounds, slingshot
+•	fonts – Custom fonts
+•	sounds – Sound effects
+•	levels – Level layout files
+________________________________________
+🎯 Example Gameplay Flow
+1.	Starting the Game
+o	Game opens on the Home Screen
+o	Player taps to continue
+2.	Menu Navigation
+o	Menu offers “Play” option
+o	Selecting Play opens Level Selection
+3.	Level Selection
+o	Choose a level to start playing
+4.	Gameplay
+o	Aim and launch birds to destroy pigs and structures
+o	Defeat all pigs to win the level
+5.	End of Level
+o	Win Screen appears if all pigs are defeated
+o	Lose Screen appears if the player fails
+________________________________________
+📚 Resources
+•	Angry Birds Official Website (Bird Creator)
+•	Angry Birds Fandom Gallery
+
+
 
 
 # KillerBEE
