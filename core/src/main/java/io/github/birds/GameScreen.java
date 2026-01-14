@@ -22,142 +22,119 @@ public class GameScreen implements Screen {
     private Texture resumeButton;
     private Texture exitButton;
     private Texture restartButton;
-    private Texture winButton;
-    private Texture loseButton;
     private Texture slingshot;
     private boolean isPaused;
     private int level;
 
-    private Bird bird1, bird2, bird3; // Birds to be placed on the screen
-    private Texture angry1, angry2, angry3, background; // Textures for the birds
+    private List<Bird> birds;
+    private Bird currentBird;
+    private int currentBirdIndex = 0;
 
-    private List<Block> blocks; // List to hold the blocks
-    private Texture block1Texture, block2Texture; // Textures for the blocks
+    private List<Block> blocks;
+    private Texture block1Texture, block2Texture;
 
-    private Pig pig1, pig2, pig3, pig4; // Pigs to be placed on the blocks
-    private Texture pigTexture; // Texture for the pig
+    private List<Pig> pigs;
+    private Texture pigTexture;
 
-    private Bird selectedBird = null;
-    private Vector2 touchOffset = new Vector2();
+    private static final float SLINGSHOT_X = 200f;
+    private static final float SLINGSHOT_Y = 240f;
+    private static final float MAX_DRAG_DISTANCE = 120f;
+    private static final float LAUNCH_MULTIPLIER = 4.5f;
+
+    private boolean isDragging = false;
+    private Vector2 dragStart = new Vector2();
+    private Vector2 dragCurrent = new Vector2();
+
+    private float timeSinceLastBird = 0;
+    private static final float BIRD_SWITCH_DELAY = 2.0f;
+
+    private boolean gameEnded = false;
 
     public GameScreen(final MyGame game, int level) {
         this.game = game;
         this.level = level;
 
-        // Load textures
         gameBackground = new Texture("Background.png");
         pauseButton = new Texture("Pause@4x.png");
         resumeButton = new Texture("pauseg.png");
         exitButton = new Texture("quit.png");
         restartButton = new Texture("Restart@4x.png");
-        winButton = new Texture("win.png");
-        loseButton = new Texture("lose.png");
         slingshot = new Texture("Slingshot.png");
 
-        // Load the bird textures
-        angry1 = new Texture("angry1.png");
-        angry2 = new Texture("angry2.png");
-        angry3 = new Texture("birds3.png");
-        background = new Texture("Background.png");
-
-        // Place birds at the center of the screen
-        float centerX = Gdx.graphics.getWidth() / 2f;
-        float centerY = Gdx.graphics.getHeight() / 2f;
-
-        bird1 = new Bird("angry1.png", centerX - 150, centerY);  // First bird at left of center
-        bird2 = new Bird("angry2.png", centerX, centerY);        // Second bird at center
-        bird3 = new Bird("birds3.png", centerX + 150, centerY);  // Third bird at right of center
-
-
-        // Load the block textures
         block1Texture = new Texture("blocl1.png");
         block2Texture = new Texture("block2.png");
-
-        // Initialize blocks
-        float blockWidth = 85;  // Custom width for block1
-        float blockHeight = 230; // Custom height for block1
-        float startY = Gdx.graphics.getHeight() - 150;
-
-
-
-        blocks = new ArrayList<>();
-        blocks.add(new Block(block1Texture, 700, startY, blockWidth, blockHeight)); // Adjusted size for block1
-        blocks.add(new Block(block2Texture, 700 + blockWidth + 10, startY));       // Default size for block2
-
-        // Load pig texture
         pigTexture = new Texture("PIG4.png");
 
-        // Initialize pigs and set their positions
-        float pigWidth = 60;  // Pig size
-        float pigHeight = 60; // Pig size
-        float baseX = Gdx.graphics.getWidth() - 500; // Right-side corner
-        float baseY = 3; // Ground level height offset
+        initializeBirds();
+        initializeBlocks();
+        initializePigs();
 
-// Arrange pigs vertically at the right side
-        pig1 = new Pig(pigTexture, baseX+40, baseY+pigHeight+360, pigWidth, pigHeight); // Bottom-most pig
-        pig2 = new Pig(pigTexture, baseX+96, baseY + pigHeight + 228, pigWidth, pigHeight); // Second pig
-        pig3 = new Pig(pigTexture, baseX-60, baseY + 2 * (pigHeight + 35), pigWidth, pigHeight); // Third pig
-        pig4 = new Pig(pigTexture, baseX-20, baseY + 6 * (pigHeight + 10), pigWidth, pigHeight); // Top-most pig
-        isPaused = false;
+        currentBird = birds.get(0);
+        currentBird.setState(Bird.BirdState.IDLE);
     }
+
+    private void initializeBirds() {
+        birds = new ArrayList<>();
+        birds.add(new Bird("angry1.png", SLINGSHOT_X, SLINGSHOT_Y));
+        birds.add(new Bird("angry2.png", SLINGSHOT_X - 100, SLINGSHOT_Y - 10));
+        birds.add(new Bird("birds3.png", SLINGSHOT_X - 200, SLINGSHOT_Y - 20));
+
+        for (Bird bird : birds) {
+            bird.setSlingshotPosition(SLINGSHOT_X, SLINGSHOT_Y);
+        }
+    }
+
+    private void initializeBlocks() {
+        blocks = new ArrayList<>();
+        float blockWidth = 85;
+        float blockHeight = 230;
+        float startY = Gdx.graphics.getHeight() - 150;
+
+        blocks.add(new Block(block1Texture, 700, startY, blockWidth, blockHeight));
+        blocks.add(new Block(block2Texture, 700 + blockWidth + 10, startY));
+    }
+
+    private void initializePigs() {
+        pigs = new ArrayList<>();
+        float pigWidth = 60;
+        float pigHeight = 60;
+        float baseX = Gdx.graphics.getWidth() - 500;
+        float baseY = 3;
+
+        pigs.add(new Pig(pigTexture, baseX + 40, baseY + pigHeight + 360, pigWidth, pigHeight));
+        pigs.add(new Pig(pigTexture, baseX + 96, baseY + pigHeight + 228, pigWidth, pigHeight));
+        pigs.add(new Pig(pigTexture, baseX - 60, baseY + 2 * (pigHeight + 35), pigWidth, pigHeight));
+        pigs.add(new Pig(pigTexture, baseX - 20, baseY + 6 * (pigHeight + 10), pigWidth, pigHeight));
+    }
+
     @Override
     public void show() {
-
     }
 
     @Override
     public void render(float delta) {
+        if (!isPaused && !gameEnded) {
+            updateGame(delta);
+        }
+
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         SpriteBatch batch = game.getBatch();
         batch.begin();
 
         batch.draw(gameBackground, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        batch.draw(slingshot, 150, 200, 90, 130);
 
-        // Define the size for all birds
-        float birdWidth = 95;
-        float birdHeight = 95;
-
-        // Define positions for the birds
-        float bird3X = -20;
-        float bird3Y = 180;
-
-        float bird2X = -90 + birdWidth + 15;
-        float bird2Y = 180;
-
-        float bird1X = -150 + 2 * (birdWidth + 15);
-        float bird1Y = 180;
-
-
-
-        // Draw the birds at their respective positions and scale them to the same size
-        batch.draw(angry1, bird1X, bird1Y, birdWidth, birdHeight);
-        batch.draw(angry2, bird2X, bird2Y, birdWidth, birdHeight);
-        batch.draw(angry3, bird3X, bird3Y, birdWidth, birdHeight);
-
-
-        // Render birds using the Bird class
-        bird1.draw(batch, 1);
-        bird2.draw(batch, 1);
-        bird3.draw(batch, 1);
-
-        // Update and draw blocks
         for (Block block : blocks) {
-            block.update(delta); // Make the blocks fall
             block.draw(batch);
         }
-        // Rotate pigs dynamically (add rotation logic here)
-        pig1.rotate(-1);  // Rotate pig1 by 1 degree per frame
-        pig2.rotate(-2);  // Rotate pig2 by 2 degrees per frame
-        pig3.rotate(-1.5f); // Rotate pig3 by 1.5 degrees per frame
-        pig4.rotate(-1);  // Rotate pig4 by 3 degrees per frame
-        // Draw the pigs
-        pig1.draw(batch);
-        pig2.draw(batch);
-        pig3.draw(batch);
-        pig4.draw(batch);
 
-        // Draw the slingshot
-        batch.draw(slingshot, 150, 200, 90, 130);
+        for (Pig pig : pigs) {
+            pig.draw(batch);
+        }
+
+        for (Bird bird : birds) {
+            bird.draw(batch, 1);
+        }
 
         if (!isPaused) {
             batch.draw(pauseButton, 10, Gdx.graphics.getHeight() - 70, 60, 60);
@@ -167,90 +144,177 @@ public class GameScreen implements Screen {
             batch.draw(restartButton, Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2 - 160, 200, 80);
         }
 
-        batch.draw(winButton, Gdx.graphics.getWidth() - 110, Gdx.graphics.getHeight() - 70, 100, 60);
-        batch.draw(loseButton, Gdx.graphics.getWidth() - 110, 10, 100, 60);
-
-
-
         batch.end();
 
-        handleInput();
-
+        if (!isPaused && !gameEnded) {
+            handleInput();
+        } else {
+            handlePauseInput();
+        }
     }
 
+    private void updateGame(float delta) {
+        for (Bird bird : birds) {
+            bird.update(delta);
+        }
 
+        for (Block block : blocks) {
+            block.update(delta);
+        }
+
+        for (Pig pig : pigs) {
+            if (!pig.isDestroyed()) {
+                pig.rotate(-1);
+            }
+        }
+
+        checkCollisions();
+
+        if (currentBird != null && currentBird.getState() == Bird.BirdState.LANDED) {
+            timeSinceLastBird += delta;
+
+            if (timeSinceLastBird >= BIRD_SWITCH_DELAY) {
+                switchToNextBird();
+                timeSinceLastBird = 0;
+            }
+        }
+
+        checkWinLoseConditions();
+    }
+
+    private void checkCollisions() {
+        for (Bird bird : birds) {
+            if (bird.getState() != Bird.BirdState.LAUNCHED) continue;
+
+            Rectangle birdBounds = bird.getBounds();
+
+            for (Pig pig : pigs) {
+                if (pig.isDestroyed()) continue;
+
+                if (birdBounds.overlaps(pig.getBounds())) {
+                    float impactVelocity = (float) Math.sqrt(
+                        bird.getVelocityX() * bird.getVelocityX() +
+                        bird.getVelocityY() * bird.getVelocityY()
+                    );
+                    pig.takeDamage(impactVelocity);
+
+                    bird.setVelocity(bird.getVelocityX() * 0.5f, bird.getVelocityY() * 0.5f);
+                }
+            }
+        }
+    }
+
+    private void checkWinLoseConditions() {
+        if (gameEnded) return;
+
+        boolean allPigsDead = true;
+        for (Pig pig : pigs) {
+            if (!pig.isDestroyed()) {
+                allPigsDead = false;
+                break;
+            }
+        }
+
+        if (allPigsDead) {
+            gameEnded = true;
+            game.setScreen(new WinScreen(game));
+            dispose();
+            return;
+        }
+
+        boolean allBirdsUsed = true;
+        for (Bird bird : birds) {
+            if (!bird.hasBeenLaunched() || bird.getState() != Bird.BirdState.LANDED) {
+                allBirdsUsed = false;
+                break;
+            }
+        }
+
+        if (allBirdsUsed && (currentBird == null || currentBird.getState() == Bird.BirdState.LANDED)) {
+            gameEnded = true;
+            game.setScreen(new LoseScreen(game));
+            dispose();
+        }
+    }
+
+    private void switchToNextBird() {
+        currentBirdIndex++;
+        if (currentBirdIndex < birds.size()) {
+            currentBird = birds.get(currentBirdIndex);
+            currentBird.resetToSlingshot();
+            currentBird.setState(Bird.BirdState.IDLE);
+        } else {
+            currentBird = null;
+        }
+    }
 
     private void handleInput() {
+        if (currentBird == null || currentBird.getState() == Bird.BirdState.LAUNCHED) {
+            return;
+        }
+
         if (Gdx.input.justTouched()) {
             int x = Gdx.input.getX();
             int y = Gdx.graphics.getHeight() - Gdx.input.getY();
 
-
-            // Check for bird selection first
-            Rectangle bird1Rect = new Rectangle(-150 + 2 * (95 + 15), 180, 95, 95);
-            Rectangle bird2Rect = new Rectangle(-90 + 95 + 15, 180, 95, 95);
-            Rectangle bird3Rect = new Rectangle(-20, 180, 95, 95);
-
-            if (bird1Rect.contains(x, y)) {
-                selectedBird = bird1;
-                touchOffset.set(x - bird1Rect.x, y - bird1Rect.y);
-            } else if (bird2Rect.contains(x, y)) {
-                selectedBird = bird2;
-                touchOffset.set(x - bird2Rect.x, y - bird2Rect.y);
-            } else if (bird3Rect.contains(x, y)) {
-                selectedBird = bird3;
-                touchOffset.set(x - bird3Rect.x, y - bird3Rect.y);
+            Rectangle pauseRect = new Rectangle(10, Gdx.graphics.getHeight() - 70, 60, 60);
+            if (pauseRect.contains(x, y)) {
+                isPaused = true;
+                return;
             }
 
-            Rectangle pauseRect = new Rectangle(10, Gdx.graphics.getHeight() - 70, 60, 60);
+            Rectangle birdBounds = currentBird.getBounds();
+            if (birdBounds.contains(x, y)) {
+                isDragging = true;
+                dragStart.set(SLINGSHOT_X, SLINGSHOT_Y);
+                currentBird.setState(Bird.BirdState.AIMING);
+            }
+        }
+
+        if (isDragging && Gdx.input.isTouched()) {
+            int x = Gdx.input.getX();
+            int y = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+            dragCurrent.set(x, y);
+            Vector2 dragVector = new Vector2(dragStart).sub(dragCurrent);
+
+            if (dragVector.len() > MAX_DRAG_DISTANCE) {
+                dragVector.nor().scl(MAX_DRAG_DISTANCE);
+            }
+
+            currentBird.setPosition(SLINGSHOT_X - dragVector.x, SLINGSHOT_Y - dragVector.y);
+        }
+
+        if (isDragging && !Gdx.input.isTouched()) {
+            isDragging = false;
+
+            Vector2 launchVector = new Vector2(dragStart).sub(currentBird.getX(), currentBird.getY());
+            launchVector.scl(LAUNCH_MULTIPLIER);
+
+            currentBird.launch(launchVector.x, launchVector.y);
+        }
+    }
+
+    private void handlePauseInput() {
+        if (Gdx.input.justTouched()) {
+            int x = Gdx.input.getX();
+            int y = Gdx.graphics.getHeight() - Gdx.input.getY();
+
             Rectangle resumeRect = new Rectangle(Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2 + 40, 200, 80);
             Rectangle exitRect = new Rectangle(Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2 - 60, 200, 80);
             Rectangle restartRect = new Rectangle(Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2 - 160, 200, 80);
 
-            if (!isPaused && pauseRect.contains(x, y)) {
-                isPaused = true;
-            } else if (isPaused && resumeRect.contains(x, y)) {
+            if (resumeRect.contains(x, y)) {
                 isPaused = false;
-            } else if (isPaused && exitRect.contains(x, y)) {
+            } else if (exitRect.contains(x, y)) {
                 game.setScreen(new PlayExitScreen(game));
                 dispose();
-            } else if (isPaused && restartRect.contains(x, y)) {
+            } else if (restartRect.contains(x, y)) {
                 game.setScreen(new GameScreen(game, level));
-                dispose();
-            } else if (new Rectangle(Gdx.graphics.getWidth() - 110, Gdx.graphics.getHeight() - 70, 100, 60).contains(x, y)) {
-                game.setScreen(new WinScreen(game));
-                dispose();
-            } else if (new Rectangle(Gdx.graphics.getWidth() - 110, 10, 100, 60).contains(x, y)) {
-                game.setScreen(new LoseScreen(game));
                 dispose();
             }
         }
-        // Bird dragging
-        if (Gdx.input.isTouched() && selectedBird != null) {
-            int x = Gdx.input.getX();
-            int y = Gdx.graphics.getHeight() - Gdx.input.getY();
-
-            // Update bird position based on touch
-            float newX = x - touchOffset.x;
-            float newY = y - touchOffset.y;
-
-            // Optional: Add boundaries to restrict bird movement
-            newX = Math.max(0, Math.min(newX, Gdx.graphics.getWidth() - 95));
-            newY = Math.max(0, Math.min(newY, Gdx.graphics.getHeight() - 95));
-
-            selectedBird.setPosition(newX, newY);
-        }
-
-        // Reset bird selection when touch is released
-        if (!Gdx.input.isTouched()) {
-            selectedBird = null;
-        }
     }
-
-
-
-
-
 
     @Override
     public void resize(int width, int height) {
@@ -275,36 +339,21 @@ public class GameScreen implements Screen {
         if (resumeButton != null) resumeButton.dispose();
         if (exitButton != null) exitButton.dispose();
         if (restartButton != null) restartButton.dispose();
-        if (winButton != null) winButton.dispose();
-        if (loseButton != null) loseButton.dispose();
         if (slingshot != null) slingshot.dispose();
-
-        if (angry1 != null) angry1.dispose();
-        if (angry2 != null) angry2.dispose();
-        if (angry3 != null) angry3.dispose();
-        if (background != null) background.dispose();
-        pigTexture.dispose();
-
+        if (pigTexture != null) pigTexture.dispose();
         if (block1Texture != null) block1Texture.dispose();
         if (block2Texture != null) block2Texture.dispose();
+
         for (Block block : blocks) {
             block.dispose();
-
-//            // Dispose pigs
-//            pig1.dispose();
-//            pig2.dispose();
-//            pig3.dispose();
-//            pig4.dispose();
-        }
         }
     }
 
-    // Inner Block class
     class Block {
         private Texture texture;
         private float x, y;
-        private float speed = 500; // Falling speed
-        float width = 90, height = 100; // Default block size, now public for easy adjustment
+        private float speed = 500;
+        float width = 90, height = 100;
 
         public Block(Texture texture, float x, float y) {
             this.texture = texture;
@@ -320,15 +369,19 @@ public class GameScreen implements Screen {
 
         public void update(float delta) {
             y -= speed * delta;
-            if (y < 195) y = 195; // Stop falling at the ground
+            if (y < 195) y = 195;
         }
 
         public void draw(SpriteBatch batch) {
             batch.draw(texture, x, y, width, height);
         }
 
+        public Rectangle getBounds() {
+            return new Rectangle(x, y, width, height);
+        }
+
         public void dispose() {
             if (texture != null) texture.dispose();
         }
     }
-
+}
